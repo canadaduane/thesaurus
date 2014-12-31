@@ -29,7 +29,7 @@ julia -e 'Pkg.add("Morsel")'
 
 # Running
 
-```julia
+```
 $ julia 
 
                _
@@ -40,7 +40,9 @@ $ julia
   | | |_| | | | (_| |  |  Version 0.3.3 (2014-11-23 20:19 UTC)
  _/ |\__'_|_|_|\__'_|  |  'Official http://julialang.org/ release'
 |__/                   |  x86_64-apple-darwin13.3.0
+```
 
+```julia
 julia> include("WordMatrix.jl")
 
 julia> m = WordMatrix("/path/to/crawl300-100k")
