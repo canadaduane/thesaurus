@@ -7,7 +7,7 @@ This is a Julia web app that uses the [GloVe](http://nlp.stanford.edu/projects/g
 - Download the CommonCrawl 300-dimension data set: [Common Crawl (840B tokens): 300d](http://www-nlp.stanford.edu/data/glove.840B.300d.txt.gz)
 - Separate it into a .vec and a .idx file:
 
-```
+```bash
 wget http://www-nlp.stanford.edu/data/glove.840B.300d.txt.gz
 
 gunzip -c glove.840B.300d.txt.gz \
@@ -21,7 +21,7 @@ The .vec file is the large file--it contains only floating point values, one row
 
 You'll probably need these dependencies:
 
-```
+```bash
 julia -e 'Pkg.add("Distances")'
 julia -e 'Pkg.add("Morsel")'
 ```
@@ -29,7 +29,7 @@ julia -e 'Pkg.add("Morsel")'
 
 # Running
 
-```
+```julia
 $ julia 
 
                _
@@ -50,7 +50,7 @@ Note that the file path has no suffix--the ".idx" and ".vec" are added automatic
 
 # Example
 
-```
+```julia
 julia> topn(m, m["laser"] + m["science"], 12)
 12-element Array{(String,Float64),1}:
  ("laser",6.939878264355364)     
