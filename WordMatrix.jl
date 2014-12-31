@@ -1,7 +1,5 @@
 using Distances
 
-defaultWorkDir = "/Users/duane/Projects/thesaurus"
-
 type WordMatrix
     relationships::Array{Float64}
     words::Array{String}
@@ -12,9 +10,9 @@ type WordNotFound <: Exception
 end
 Base.showerror(io::IO, e::WordNotFound) = print(io, "WordNotFound() '", e.word, "'");
 
-function WordMatrix(corpusName::String, workDir = defaultWorkDir)
-    relationships = transpose(readdlm("$(workDir)/$(corpusName).vec", ' ', Float64, quotes=false, comments=false))
-    words = [chomp(l) for l in readlines(open("$(workDir)/$(corpusName).idx"))]
+function WordMatrix(corpusPath::String)
+    relationships = transpose(readdlm("$(corpusPath).vec", ' ', Float64, quotes=false, comments=false))
+    words = [chomp(l) for l in readlines(open("$(corpusPath).idx"))]
     WordMatrix(relationships, words)
 end
 
@@ -72,8 +70,8 @@ function topn(m :: WordMatrix, wordOrVector, n=30)
   nearest(m, wordOrVector)[1:n]
 end
 
-function topIndexed(wordOrVector, n=30)
-    top = topn(wordOrVector, n)
+function topIndexed(m :: WordMatrix, wordOrVector, n=30)
+    top = topn(m, wordOrVector, n)
     [(i, r) for (i,r) in zip(1:length(top), top)]
 end
 
