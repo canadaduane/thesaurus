@@ -11,10 +11,12 @@ This is a Julia web app that uses the [GloVe](http://nlp.stanford.edu/projects/g
 wget http://www-nlp.stanford.edu/data/glove.840B.300d.txt.gz
 
 gunzip -c glove.840B.300d.txt.gz \
-| awk '{for (i=2; i<NF; i++) printf $i " "; print $NF}' >crawl300-100k.vec
+| awk '{for (i=2; i<NF; i++) printf $i " "; print $NF}' \
+| head -100000 >crawl300-100k.vec
 
 gunzip -c glove.840B.300d.txt.gz \
-| awk '{print $1}' >crawl300-100k.idx
+| awk '{print $1}' \
+| head -100000 >crawl300-100k.idx
 ```
 
 The .vec file is the large file--it contains only floating point values, one row per word, with 300 dimensions per row. The .idx file is simply an index of all of the words, each word listed per line, in the same order as the .vec file.
