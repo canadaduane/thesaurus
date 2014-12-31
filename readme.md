@@ -19,6 +19,14 @@ gunzip -c glove.840B.300d.txt.gz \
 
 The .vec file is the large file--it contains only floating point values, one row per word, with 300 dimensions per row. The .idx file is simply an index of all of the words, each word listed per line, in the same order as the .vec file.
 
+You'll probably need these dependencies:
+
+```
+julia -e 'Pkg.add("Distances")'
+julia -e 'Pkg.add("Morsel")'
+```
+
+
 # Running
 
 ```
