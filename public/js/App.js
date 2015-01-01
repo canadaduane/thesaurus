@@ -4,15 +4,12 @@ var App = React.createClass({displayName: 'App',
   getInitialState: function() {
     return {
       "results": [],
-      "n": 30,
-      "words": null,
       "loading": false
     }
   },
 
   handleSubmit: function(words) {
-    console.log("handleSubmit", "setting words to", words, " and loading to true")
-    this.setState({"words": words, "loading": true})
+    this.setState({"loading": true})
   },
 
   handleError: function(words, errMsg) {
@@ -20,7 +17,6 @@ var App = React.createClass({displayName: 'App',
   },
 
   handleResults: function(data) {
-    console.log("handleResults", "setting results", " and loading to false")
     this.setState({"results": data, "loading": false})
   },
 
@@ -29,7 +25,11 @@ var App = React.createClass({displayName: 'App',
     this.setState({"n": newN})
   },
 
-  hiddenResults: function() {
+  handleQuery: function(words) {
+    this.setState({"query": words})
+  },
+
+  resultsShouldBeHidden: function() {
     return this.state.results.length == 0 || this.state.loading
   },
 
@@ -47,15 +47,14 @@ var App = React.createClass({displayName: 'App',
       React.DOM.div({className: "row"}, 
         React.DOM.div({className: "offset-by-one-third one-third column"}, 
           WordSearch({url: this.props.lookupUrl, 
-            n: this.state.n, 
-            words: this.state.words, 
+            query: this.state.query, 
             onResults: this.handleResults, 
             onError: this.handleError, 
             onSubmit: this.handleSubmit}
           ), 
           ResultTable({data: this.state.results, 
-            hidden: this.hiddenResults(), 
-            onQuery: this.handleSubmit}
+            hidden: this.resultsShouldBeHidden(), 
+            onQuery: this.handleQuery}
           ), 
           React.DOM.div({className: spinnerClass}, "Loading..."), 
           React.DOM.div({className: moreClass}, 

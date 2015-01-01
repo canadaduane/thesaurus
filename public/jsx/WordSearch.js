@@ -2,21 +2,27 @@
 
 var WordSearch = React.createClass({
   getInitialState: function() {
-    return {"showMessage": false}
+    return {"showMessage": false, "words": null, "n": 30}
   },
 
   componentWillReceiveProps: function(nextProps) {
-    var words = this.props.words,
-        n     = this.props.n
+    // var words = this.props.words,
+    //     n     = this.props.n
 
-    console.log("componentWillReceiveProps", words, nextProps.words, nextProps.n)
-    var changed = false;
-    if (words != nextProps.words) { changed = true; words = nextProps.words }
-    if (n     != nextProps.n)     { changed = true; n     = nextProps.n }
+    // console.log("componentWillReceiveProps", words, nextProps.words, nextProps.n)
+    // var changed = false;
+    if (this.props.query != nextProps.query) {
+      this.setState({"words": nextProps.query})
+    }
 
-    if (changed) {
-      this.lookupWords(words, n)
-  }
+    // if (words != nextProps.words) { changed = true; words = nextProps.words }
+    // if (n     != nextProps.n)     { changed = true; n     = nextProps.n }
+  },
+
+  componentWillUpdate: function(nextProps, nextState) {
+    if (this.state.words != nextState.words || this.state.n != nextState.n) {
+      this.lookupWords(nextState.words, nextState.n)
+    }
   },
 
   showMessage: function(msg) {
@@ -50,8 +56,11 @@ var WordSearch = React.createClass({
       data: { words: words, n: n },
       dataType: "json",
       success: function(data) {
-        if (data.error) { handleError(data.error) }
-        else { handleSuccess(data) }
+        if (data.error) {
+          handleError(data.error)
+        } else {
+          handleSuccess(data)
+        }
       },
       error: function(xhr, status, err) {
         handleError(err.toString())
@@ -61,7 +70,9 @@ var WordSearch = React.createClass({
 
   handleSubmit: function(e) {
     e.preventDefault()
+
     var words = this.getWords()
+    this.setState({ "words": words })
 
     if (this.props.onSubmit) {
       this.props.onSubmit(words)
@@ -80,7 +91,7 @@ var WordSearch = React.createClass({
       <div>
         <form className="wordsearch" onSubmit={this.handleSubmit}>
           <div><label for="words">Lookup Word(s):</label></div>
-          <input type="text" id="words" ref="words" placeholder="words, to, lookup" value={this.props.words} />
+          <input type="text" id="words" ref="words" placeholder="words, to, lookup" />
           <input type="submit" className="button-primary" value="Lookup" />
         </form>
         <div className={msgClass} ref="message" />
