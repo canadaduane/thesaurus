@@ -2,7 +2,7 @@
 
 var WordSearch = React.createClass({
   getInitialState: function() {
-    return {"showMessage": false, "words": null, "n": 30}
+    return {"showMessage": false, "words": null, "n": 100}
   },
 
   componentWillReceiveProps: function(nextProps) {
@@ -12,6 +12,7 @@ var WordSearch = React.createClass({
     // console.log("componentWillReceiveProps", words, nextProps.words, nextProps.n)
     // var changed = false;
     if (this.props.query != nextProps.query) {
+      $(this.refs.words.getDOMNode()).val(nextProps.query)
       this.setState({"words": nextProps.query})
     }
 

@@ -21,7 +21,7 @@ var App = React.createClass({
   },
 
   handleMore: function(e) {
-    var newN = this.state.n + 30
+    var newN = this.state.n + 100
     this.setState({"n": newN})
   },
 
