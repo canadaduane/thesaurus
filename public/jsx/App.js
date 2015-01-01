@@ -4,7 +4,9 @@ var App = React.createClass({
   getInitialState: function() {
     return {
       "results": [],
-      "loading": false
+      "loading": false,
+      "query": null,
+      "querySize": 100
     }
   },
 
@@ -21,12 +23,12 @@ var App = React.createClass({
   },
 
   handleMore: function(e) {
-    var newN = this.state.n + 100
-    this.setState({"n": newN})
+    var newN = this.state.querySize + 100
+    this.setState({"querySize": newN})
   },
 
   handleQuery: function(words) {
-    this.setState({"query": words})
+    this.setState({"query": words, "loading": true})
   },
 
   resultsShouldBeHidden: function() {
@@ -46,13 +48,16 @@ var App = React.createClass({
     return (
       <div className="row">
         <div className="offset-by-one-third one-third column">
-          <WordSearch url={this.props.lookupUrl}
+          <WordSearch
+            url={this.props.lookupUrl}
             query={this.state.query}
+            querySize={this.state.querySize}
             onResults={this.handleResults}
             onError={this.handleError}
             onSubmit={this.handleSubmit}
           />
-          <ResultTable data={this.state.results}
+          <ResultTable
+            data={this.state.results}
             hidden={this.resultsShouldBeHidden()}
             onQuery={this.handleQuery}
           />

@@ -16,6 +16,10 @@ var WordSearch = React.createClass({displayName: 'WordSearch',
       this.setState({"words": nextProps.query})
     }
 
+    if (this.props.querySize != nextProps.querySize) {
+      this.setState({"n": nextProps.querySize})
+    }
+
     // if (words != nextProps.words) { changed = true; words = nextProps.words }
     // if (n     != nextProps.n)     { changed = true; n     = nextProps.n }
   },
@@ -73,13 +77,13 @@ var WordSearch = React.createClass({displayName: 'WordSearch',
     e.preventDefault()
 
     var words = this.getWords()
-    this.setState({ "words": words })
+    if (this.state.words != words) {
+      this.setState({ "words": words })
 
-    if (this.props.onSubmit) {
-      this.props.onSubmit(words)
+      if (this.props.onSubmit) {
+        this.props.onSubmit(words)
+      }
     }
-    console.log("WordSearch#handleSubmit", words)
-    // this.lookupWords(words, this.props.n)
   },
 
   render: function() {
