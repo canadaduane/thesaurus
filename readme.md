@@ -26,6 +26,7 @@ You'll probably need these dependencies:
 ```bash
 julia -e 'Pkg.add("Distances")'
 julia -e 'Pkg.add("Morsel")'
+julia -e 'Pkg.add("JSON")'
 ```
 
 

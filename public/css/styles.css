@@ -1,0 +1,44 @@
+body {
+  font-family: "Raleway", "HelveticaNeue", "Helvetica Neue", Helvetica, Arial, sans-serif;
+}
+
+.header {
+  padding-top: 20px;
+  margin-bottom: 50px;
+  text-align: center;
+  background-color: #eee;
+
+  border-bottom-right-radius: 8px;
+  border-bottom-left-radius: 8px;
+  border-bottom: 2px solid #ccc;
+}
+
+.button-primary {
+  line-height: 39px !important;
+  margin-left: 3px !important;
+}
+
+.search {
+}
+
+.heading {
+  font-weight: bold;
+  border-bottom: 2px solid #ddd;
+}
+
+.wordsearch {
+  margin-bottom: 5px;
+}
+
+.message {
+  padding: 15px;
+}
+
+.hidden {
+  display: none;
+}
+
+.error.message {
+  border-radius: 4px;
+  background-color: #fed;
+}
