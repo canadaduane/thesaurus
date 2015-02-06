@@ -81,5 +81,10 @@ end
 
 function vectorSumOfWords(m :: WordMatrix, words :: Vector{ASCIIString})
     lookup = t -> m[t]
+    mapreduce(lookup, +, words)
+end
+
+function vectorAvgOfWords(m :: WordMatrix, words :: Vector{ASCIIString})
+    lookup = t -> m[t]
     mapreduce(lookup, +, words) / length(words)
 end

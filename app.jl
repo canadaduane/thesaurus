@@ -3,7 +3,25 @@ import JSON
 
 include("WordMatrix.jl")
 
-m = WordMatrix("/Users/duane/tmp/thesaurus/crawl300-100k")
+type Dictionary
+  name::String
+  m::WordMatrix
+end
+
+dictionaries = (String => Dictionary)[
+  "com" => Dictionary("Common Crawl",
+    WordMatrix("/Users/duane/tmp/thesaurus/crawl300-100k")),
+  "g19" => Dictionary("Gutenberg 19th Century",
+    WordMatrix("/Users/duane/tmp/thesaurus/gutenberg-19thC"))
+]
+
+function tojson(ds::Dict{String,Dictionary})
+  JSON.json([{k, d.name} for (k, d) in ds])
+end
+
+println(typeof(dictionaries))
+println(tojson(dictionaries))
+# m = WordMatrix("/Users/duane/tmp/thesaurus/crawl300-100k")
 # m = WordMatrix("/Users/duane/Projects/thesaurus/short")
 
 # hotness = vectorSumOfWords(m, [
@@ -38,7 +56,8 @@ end
 #   ranked[1][1]
 # end
 
-get(app, "/lookup") do req, res
+get(app, "/lookup/<dictid::String>") do req, res
+  m = dictionaries[req.params[:dictid]].m
   if haskey(req.state, :url_params)
     params = req.state[:url_params]
     n = int(get(params, "n", "30"))
@@ -136,7 +155,7 @@ get(app, "/") do req, res
   </div>
 
   <script>
-    var app = new App({"lookupUrl": "/lookup"})
+    var app = new App({"lookupUrl": "/lookup/com", "dictionaries": $(tojson(dictionaries))})
     React.render(app, \$('#search')[0]);
   </script>
 </body>
