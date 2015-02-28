@@ -117,10 +117,11 @@ get(app, "/lookup/<dictid::String>") do req, res
 
   dict = dictionaries[dictid]
   jsonResponse(res, {
+    "dictid" => dictid,
     "name" => dict.name,
     "size" => length(dict.m.words),
     "routes" => [
-      "GET /lookup/$(dictid)/:words?page=P&per_page=PP"
+      "GET /lookup/$(dictid)/:words?page=:P&per_page=:PP"
     ]
   })
 end

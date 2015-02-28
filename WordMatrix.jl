@@ -79,7 +79,12 @@ function topnPaginated(m :: WordMatrix, wordOrVector, page=1, perPage=30)
     end
     if startOfPage >= 1 && endOfPage <= length(m.words)
         ranked = nearest(m, wordOrVector)
-        ranked[startOfPage:endOfPage]
+        numbers = range(startOfPage, endOfPage-startOfPage+1)
+        zipped = zip(numbers, ranked[startOfPage:endOfPage])
+        [
+            { "rank" => n, "word" => word, "distance" => dist}
+            for (n, (word, dist)) in zipped
+        ]
     else
         []
     end 
