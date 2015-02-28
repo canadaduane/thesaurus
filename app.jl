@@ -32,19 +32,6 @@ dictionaries = (String => Dictionary)[
 println(typeof(dictionaries))
 println(tojson(dictionaries))
 
-# hotness = vectorSumOfWords(m, [
-#   "hot", "warm", "sun", "sunshine", "rays", "shining", "light", "burn", 
-#   "heat", "fire", "radiation", "summer", "boiling", "day", "heat", "molten", 
-#   "reddish", "crimson", "fuchsia"])
-
-# coldness = vectorSumOfWords(m, [
-#   "cold", "cool", "moon", "frozen", "freeze", "froze", "ice", "solid", 
-#   "winter", "night", "chilly", "polar", "frigid", "blizzard", "darkness", 
-#   "white", "gray", "grey", "black", "clay", "soil"])
-
-# hotcold = WordMatrix({"hot" => hotness, "cold" => coldness})
-
-
 app = Morsel.app()
 
 function jsonResponse(res, data)
@@ -83,48 +70,57 @@ function boundedPage(page, defaultPage = 1)
   end
 end
 
-# get(app, "/hot-cold/<word::String>") do req, res
-#   word = req.params[:word]
-#   ranked = nearest(hotcold, m[word])
-#   println("hot-cold: ", word, " ", ranked[1][1])
-#   ranked[1][1]
-# end
+function words2list(words)
+  convert(Array{ASCIIString}, split(replace(words, r"[:;., ]+", " "), ' '))
+end
 
 get(app, "/") do req, res
   jsonResponse(res, {
     "service" => "Related Words",
     "routes" => [
-      "GET /lookup"
+      "GET /lookup",
+      "GET /categorize"
     ]
   })
 end
 
-get(app, "/lookup") do req, res
-  jsonResponse(res, {
-    "dictionaries" => [{ "dictid" => id, "name" => dict.name } for (id, dict) in dictionaries],
-    "routes" => [
-      "GET /lookup/:dictid"
-    ]
-  })
-end
-
-get(app, "/lookup/<dictid::String>") do req, res
-  dictid = req.params[:dictid]
-
-  if !haskey(dictionaries, dictid)
-    return jsonError(res, "'$(dictid)' dictionary not found")
+function listDictionaries(prefix)
+  function(req, res)
+    jsonResponse(res, {
+      "dictionaries" => [{ "dictid" => id, "name" => dict.name } for (id, dict) in dictionaries],
+      "routes" => [
+        "GET /$(prefix)/:dictid"
+      ]
+    })
   end
-
-  dict = dictionaries[dictid]
-  jsonResponse(res, {
-    "dictid" => dictid,
-    "name" => dict.name,
-    "size" => length(dict.m.words),
-    "routes" => [
-      "GET /lookup/$(dictid)/:words?page=:P&per_page=:PP"
-    ]
-  })
 end
+
+get(listDictionaries("lookup"), app, "/lookup")
+get(listDictionaries("categorize"), app, "/categorize")
+
+function getDictionary(routes)
+  function(req, res)
+    dictid = req.params[:dictid]
+
+    if !haskey(dictionaries, dictid)
+      return jsonError(res, "'$(dictid)' dictionary not found")
+    end
+
+    dict = dictionaries[dictid]
+    jsonResponse(res, {
+      "dictid" => dictid,
+      "name" => dict.name,
+      "size" => length(dict.m.words),
+      "routes" => routes
+    })
+  end
+end
+
+get(getDictionary(["GET /lookup/:dictid/:words?page=:P&per_page=:PP"]),
+    app, "/lookup/<dictid::String>")
+get(getDictionary(["GET /categorize/:dictid/:wordset1/:wordset2/:testword"]),
+    app, "/categorize/<dictid::String>")
+
 
 get(app, "/lookup/<dictid::String>/<words::String>") do req, res
   dictid = req.params[:dictid]
@@ -139,11 +135,10 @@ get(app, "/lookup/<dictid::String>/<words::String>") do req, res
 
   m = dictionaries[dictid].m
 
-  spacedWords = replace(words, r"[:;., ]+", " ")
-  words = convert(Array{ASCIIString}, split(spacedWords, ' '))
-  println("lookup: ", spacedWords, ", page: ", page, ", per_page: ", perPage)
+  wordsList = words2list(words)
+  println("lookup: ", wordsList, ", page: ", page, ", per_page: ", perPage)
   try
-    quality = vectorSumOfWords(m, words)
+    quality = vectorSumOfWords(m, wordsList)
     ranked = topnPaginated(m, quality, page, perPage)
     jsonResponse(res, ranked)
   catch e
@@ -154,6 +149,57 @@ get(app, "/lookup/<dictid::String>/<words::String>") do req, res
       return jsonError(res, "unable to find vector sum of words: $(e)")
     end
   end
+end
+
+# hotness = vectorSumOfWords(m, [
+#   "hot", "warm", "sun", "sunshine", "rays", "shining", "light", "burn", 
+#   "heat", "fire", "radiation", "summer", "boiling", "day", "heat", "molten", 
+#   "reddish", "crimson", "fuchsia"])
+
+# coldness = vectorSumOfWords(m, [
+#   "cold", "cool", "moon", "frozen", "freeze", "froze", "ice", "solid", 
+#   "winter", "night", "chilly", "polar", "frigid", "blizzard", "darkness", 
+#   "white", "gray", "grey", "black", "clay", "soil"])
+
+# hotcold = WordMatrix({"hot" => hotness, "cold" => coldness})
+
+# get(app, "/hot-cold/<word::String>") do req, res
+#   word = req.params[:word]
+#   ranked = nearest(hotcold, m[word])
+#   println("hot-cold: ", word, " ", ranked[1][1])
+#   ranked[1][1]
+# end
+
+get(app,
+  "/categorize/<dictid::String>" *
+  "/<wordset1::String>/<wordset2::String>" *
+  "/<testword::String>") do req, res
+
+  dictid = req.params[:dictid]
+  wordset1 = req.params[:wordset1]
+  wordset2 = req.params[:wordset2]
+  testword = req.params[:testword]
+
+  if !haskey(dictionaries, dictid)
+    return jsonError(res, "'$(dictid)' dictionary not found")
+  end
+
+  m = dictionaries[dictid].m
+
+  set1 = vectorSumOfWords(m, words2list(wordset1))
+  set2 = vectorSumOfWords(m, words2list(wordset2))
+
+  matrix = WordMatrix({"set1" => set1, "set2" => set2})
+
+  ranked = nearest(matrix, m[testword])
+  println("categorize: ", testword, " ", ranked[1][1], " : ", wordset1, " / ", wordset2)
+  # ranked[1][1]
+  jsonResponse(res, {
+    "testword" => testword,
+    "category" => ranked[1][1],
+    "set1" => wordset1,
+    "set2" => wordset2  
+  })
 end
 
 start(app, 8000)
