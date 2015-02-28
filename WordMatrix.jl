@@ -67,7 +67,22 @@ function nearest(m :: WordMatrix, wordOrVector)
 end
 
 function topn(m :: WordMatrix, wordOrVector, n=30)
-  nearest(m, wordOrVector)[1:n]
+    nearest(m, wordOrVector)[1:n]
+end
+
+function topnPaginated(m :: WordMatrix, wordOrVector, page=1, perPage=30)
+    startOfPage = perPage * (page - 1) + 1
+    endOfPage = startOfPage + perPage - 1
+    # println("startOfPage ", startOfPage, ", endOfPage ", endOfPage)
+    if endOfPage > length(m.words)
+        endOfPage = length(m.words)
+    end
+    if startOfPage >= 1 && endOfPage <= length(m.words)
+        ranked = nearest(m, wordOrVector)
+        ranked[startOfPage:endOfPage]
+    else
+        []
+    end 
 end
 
 function topIndexed(m :: WordMatrix, wordOrVector, n=30)

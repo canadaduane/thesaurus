@@ -1,0 +1,14 @@
+{
+  "sources": [
+    {
+      "abbrev": "com",
+      "name": "Common Crawl",
+      "path": "/home/thesaurus/crawl300-100k"
+    },
+    {
+      "abbrev": "g19",
+      "name": "Gutenberg 19th Century",
+      "path": "/home/thesaurus/gutenberg-19thC"
+    }
+  ]
+}

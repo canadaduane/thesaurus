@@ -8,21 +8,29 @@ type Dictionary
   m::WordMatrix
 end
 
-dictionaries = (String => Dictionary)[
-  "com" => Dictionary("Common Crawl",
-    WordMatrix("/Users/duane/tmp/thesaurus/crawl300-100k")),
-  "g19" => Dictionary("Gutenberg 19th Century",
-    WordMatrix("/Users/duane/tmp/thesaurus/gutenberg-19thC"))
-]
-
 function tojson(ds::Dict{String,Dictionary})
-  JSON.json([{k, d.name} for (k, d) in ds])
+  JSON.json([ {"abbrev" => k, "name" => d.name} for (k, d) in ds])
 end
+
+function DictionaryFromSource(source)
+  if haskey(source, "path")
+    Dictionary(
+      get(source, "name", "Default"),
+      WordMatrix(source["path"]))
+  else
+    error("Dictionary source must have a file path")
+  end
+end
+
+configfile = joinpath(dirname(@__FILE__()), "config.json")
+config = JSON.parse(readall(open(configfile)))
+
+dictionaries = (String => Dictionary)[
+  get(s, "abbrev", "default") => DictionaryFromSource(s) for s in get(config, "sources", [])
+]
 
 println(typeof(dictionaries))
 println(tojson(dictionaries))
-# m = WordMatrix("/Users/duane/tmp/thesaurus/crawl300-100k")
-# m = WordMatrix("/Users/duane/Projects/thesaurus/short")
 
 # hotness = vectorSumOfWords(m, [
 #   "hot", "warm", "sun", "sunshine", "rays", "shining", "light", "burn", 
@@ -49,6 +57,32 @@ function jsonError(res, msg, status = 202)
   jsonResponse(res, {"error" => msg})
 end
 
+function constrain(value, min, max = nothing)
+  if value < min
+    min
+  elseif !is(max, nothing) && value > max
+    max
+  else
+    value
+  end
+end
+
+function boundedPerPage(perPage, defaultPerPage = 100, maxPerPage = 1000)
+  if is(perPage, nothing)
+    defaultPerPage
+  else
+    constrain(perPage, 1, maxPerPage)
+  end
+end
+
+function boundedPage(page, defaultPage = 1)
+  if is(page, nothing)
+    defaultPage
+  else
+    constrain(page, 1)
+  end
+end
+
 # get(app, "/hot-cold/<word::String>") do req, res
 #   word = req.params[:word]
 #   ranked = nearest(hotcold, m[word])
@@ -56,111 +90,69 @@ end
 #   ranked[1][1]
 # end
 
-get(app, "/lookup/<dictid::String>") do req, res
-  m = dictionaries[req.params[:dictid]].m
-  if haskey(req.state, :url_params)
-    params = req.state[:url_params]
-    n = int(get(params, "n", "30"))
-    if haskey(params, "words")
-      spacedWords = replace(get(params, "words", ""), r"[:;., ]+", " ")
-      words = convert(Array{ASCIIString}, split(spacedWords, ' '))
-      println("lookup: ", words, " ", n)
-      try
-        quality = vectorSumOfWords(m, words)
-        ranked = topn(m, quality, n)
-        jsonResponse(res, ranked)
-      catch e
-        if isa(e, WordNotFound)
-          return jsonError(res, "'$(e.word)' not in dataset")
-        else
-          return jsonError(res, "unable to find vector sum of words $(e)")
-        end
-      end
-    else
-      jsonError(res, "'words' is a required param")
-    end
-  else
-    jsonError(res, "params required")
-  end
-end
-
-function cssResponse(res, css)
-  res.headers["Content-Type"] = "text/css"
-  return css
-end
-
-get(app, "/css/<css::String>") do req, res
-  css = readall(open(joinpath(dirname(@__FILE__), "public", "css", req.params[:css])))
-  cssResponse(res, css)
-end
-
-function jsResponse(res, js)
-  res.headers["Content-Type"] = "text/javascript"
-  return js
-end
-
-get(app, "/js/<js::String>") do req, res
-  js = readall(open(joinpath(dirname(@__FILE__), "public", "js", req.params[:js])))
-  jsResponse(res, js)
-end
-
-
 get(app, "/") do req, res
-"""
-<!DOCTYPE html>
-<html lang="en">
-<head>
+  jsonResponse(res, {
+    "service" => "Related Words",
+    "routes" => [
+      "GET /lookup"
+    ]
+  })
+end
 
-  <!-- Basic Page Needs
-  –––––––––––––––––––––––––––––––––––––––––––––––––– -->
-  <meta charset="utf-8">
-  <title>GloVe Thesaurus</title>
-  <meta name="description" content="A thesaurus-like tool based on GloVe word vectorization">
-  <meta name="author" content="Duane Johnson">
+get(app, "/lookup") do req, res
+  jsonResponse(res, {
+    "dictionaries" => [{ "dictid" => id, "name" => dict.name } for (id, dict) in dictionaries],
+    "routes" => [
+      "GET /lookup/:dictid"
+    ]
+  })
+end
 
-  <!-- Mobile Specific Metas
-  –––––––––––––––––––––––––––––––––––––––––––––––––– -->
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+get(app, "/lookup/<dictid::String>") do req, res
+  dictid = req.params[:dictid]
 
-  <!-- FONT
-  –––––––––––––––––––––––––––––––––––––––––––––––––– -->
-  <link href="//fonts.googleapis.com/css?family=Raleway:400,300,600" rel="stylesheet" type="text/css">
+  if !haskey(dictionaries, dictid)
+    return jsonError(res, "'$(dictid)' dictionary not found")
+  end
 
-  <!-- CSS
-  –––––––––––––––––––––––––––––––––––––––––––––––––– -->
-  <link rel="stylesheet" href="/css/normalize.css">
-  <link rel="stylesheet" href="/css/skeleton.css">
-  <link rel="stylesheet" href="/css/styles.css">
+  dict = dictionaries[dictid]
+  jsonResponse(res, {
+    "name" => dict.name,
+    "size" => length(dict.m.words),
+    "routes" => [
+      "GET /lookup/$(dictid)/:words?page=P&per_page=PP"
+    ]
+  })
+end
 
-  <!-- JS
-  –––––––––––––––––––––––––––––––––––––––––––––––––– -->
-  <script src="/js/jquery.js"></script>
-  <script src="/js/react.js"></script>
-  <script src="/js/WordSearch.js"></script>
-  <script src="/js/ResultTable.js"></script>
-  <script src="/js/App.js"></script>
+get(app, "/lookup/<dictid::String>/<words::String>") do req, res
+  dictid = req.params[:dictid]
+  words = req.params[:words]
 
-</head>
-<body>
+  if !haskey(dictionaries, dictid)
+    return jsonError(res, "'$(dictid)' dictionary not found")
+  end
 
-  <!-- Primary Page Layout
-  –––––––––––––––––––––––––––––––––––––––––––––––––– -->
-  <div class="container">
-    <section class="header">
-      <div class="row">
-        <h4>Duane's <a href="http://nlp.stanford.edu/projects/glove/">GloVe</a> Thesaurus</h4>
-      </div>
-    </section>
-    <section class="search" id="search"></section>
-  </div>
+  perPage = boundedPerPage(urlparam(req, :per_page, int))
+  page = boundedPage(urlparam(req, :page, int))
 
-  <script>
-    var app = new App({"lookupUrl": "/lookup/com", "dictionaries": $(tojson(dictionaries))})
-    React.render(app, \$('#search')[0]);
-  </script>
-</body>
-</html>
-"""
+  m = dictionaries[dictid].m
+
+  spacedWords = replace(words, r"[:;., ]+", " ")
+  words = convert(Array{ASCIIString}, split(spacedWords, ' '))
+  println("lookup: ", spacedWords, ", page: ", page, ", per_page: ", perPage)
+  try
+    quality = vectorSumOfWords(m, words)
+    ranked = topnPaginated(m, quality, page, perPage)
+    jsonResponse(res, ranked)
+  catch e
+    if isa(e, WordNotFound)
+      return jsonError(res, "'$(e.word)' not in dataset")
+    else
+      # rethrow(e)
+      return jsonError(res, "unable to find vector sum of words: $(e)")
+    end
+  end
 end
 
 start(app, 8000)
