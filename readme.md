@@ -5,7 +5,7 @@ This is a Julia web app that uses the [GloVe](http://nlp.stanford.edu/projects/g
 # Installation
 
 - Download the CommonCrawl 300-dimension data set: [Common Crawl (840B tokens): 300d](http://www-nlp.stanford.edu/data/glove.840B.300d.txt.gz)
-- Separate it into a .vec and a .idx file:
+- [OPTIONAL] Separate it into a .vec and a .idx file (this allows us to use a fast readdlm julia call):
 
 ```bash
 wget http://www-nlp.stanford.edu/data/glove.840B.300d.txt.gz
@@ -21,12 +21,13 @@ gunzip -c glove.840B.300d.txt.gz \
 
 The .vec file is the large file--it contains only floating point values, one row per word, with 300 dimensions per row. The .idx file is simply an index of all of the words, each word listed per line, in the same order as the .vec file.
 
-You'll probably need these dependencies:
+See the REQUIRE file for dependencies.
 
 ```bash
 julia -e 'Pkg.add("Distances")'
 julia -e 'Pkg.add("Morsel")'
 julia -e 'Pkg.add("JSON")'
+...
 ```
 
 
@@ -48,10 +49,11 @@ $ julia
 ```julia
 julia> include("WordMatrix.jl")
 
-julia> m = WordMatrix("/path/to/crawl300-100k")
+julia> m = WordMatrix("glove.840B.300d.txt.gz")
 ```
 
-Note that the file path has no suffix--the ".idx" and ".vec" are added automatically.
+Note that if you'd like to load the idx/vec file, just reference the .idx file
+and the accompanying .vec file will be assumed.
 
 # Example
 
