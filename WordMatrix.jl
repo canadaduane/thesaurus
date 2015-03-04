@@ -1,4 +1,5 @@
 using Distances
+using GZip
 
 type WordMatrix
     relationships::Array{Float64}
@@ -10,10 +11,47 @@ type WordNotFound <: Exception
 end
 Base.showerror(io::IO, e::WordNotFound) = print(io, "WordNotFound() '", e.word, "'");
 
+function isGzipFilename(path::String)
+    return ismatch(r"\.gz$"i, path)
+end
+
+function loadGzipFile(path::String)
+    stream = GZip.gzopen(path)
+    relationships = Vector{Float64}[]
+    words = ASCIIString[]
+    for line in eachline(stream)
+        word, remainder = split(line, ' ', 2)
+        values = split(chop(remainder), ' ')
+        push!(words, word)
+        push!(relationships, map(float, values))
+    end
+    return (relationships, words)
+end
+
+function isIdxFilename(path::String)
+    return ismatch(r"\.idx$"i, path)
+end
+
+function loadVecIdxFile(idxPath::String)
+    vecPath = replace(idxPath, r"\.idx$"i, ".vec")
+    relationships = transpose(readdlm(vecPath, ' ', Float64, quotes=false, comments=false))
+    words = [chomp(l) for l in readlines(open(idxPath))]
+    return (relationships, words)
+end
+
 function WordMatrix(corpusPath::String)
-    relationships = transpose(readdlm("$(corpusPath).vec", ' ', Float64, quotes=false, comments=false))
-    words = [chomp(l) for l in readlines(open("$(corpusPath).idx"))]
-    WordMatrix(relationships, words)
+    if isfile(corpusPath)
+        if isIdxFilename(corpusPath)
+            relationships, words = loadVecIdxFile(corpusPath)
+        elseif isGzipFilename(corpusPath)
+            relationships, words = loadGzipFile(corpusPath)
+        else
+            error("Unknown file format or suffix: $(corpusPath). I can read .gz and .idx (text).")
+        end
+        WordMatrix(relationships, words)
+    else
+        error("Corpus not found: $(corpusPath)")
+    end
 end
 
 function WordMatrix(m :: WordMatrix, subset :: Array{String})
