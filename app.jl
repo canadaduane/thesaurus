@@ -143,7 +143,7 @@ get(app, "/lookup/<dictid::String>/<words::String>") do req, res
     jsonResponse(res, ranked)
   catch e
     if isa(e, WordNotFound)
-      return jsonError(res, "'$(e.word)' not in dataset")
+      return jsonError(res, "'$(e.word)' not in '$(dictid)' dictionary")
     else
       # rethrow(e)
       return jsonError(res, "unable to find vector sum of words: $(e)")
@@ -151,28 +151,12 @@ get(app, "/lookup/<dictid::String>/<words::String>") do req, res
   end
 end
 
-# hotness = vectorSumOfWords(m, [
-#   "hot", "warm", "sun", "sunshine", "rays", "shining", "light", "burn", 
-#   "heat", "fire", "radiation", "summer", "boiling", "day", "heat", "molten", 
-#   "reddish", "crimson", "fuchsia"])
-
-# coldness = vectorSumOfWords(m, [
-#   "cold", "cool", "moon", "frozen", "freeze", "froze", "ice", "solid", 
-#   "winter", "night", "chilly", "polar", "frigid", "blizzard", "darkness", 
-#   "white", "gray", "grey", "black", "clay", "soil"])
-
-# hotcold = WordMatrix({"hot" => hotness, "cold" => coldness})
-
-# get(app, "/hot-cold/<word::String>") do req, res
-#   word = req.params[:word]
-#   ranked = nearest(hotcold, m[word])
-#   println("hot-cold: ", word, " ", ranked[1][1])
-#   ranked[1][1]
-# end
+# /categorize/common-300-100k/hot+warm+sun+sunshine+rays+shining+light+burn+heat+fire+radiation+summer+boiling+day+heat+molten+reddish+crimson+fuchsia/cold+cool+moon+frozen+freeze+froze+ice+solid+winter+night+chilly+polar+frigid+blizzard+darkness+white+gray+grey+black+clay+soil/mittens
 
 get(app,
   "/categorize/<dictid::String>" *
-  "/<wordset1::String>/<wordset2::String>" *
+  "/<wordset1::String>" *
+  "/<wordset2::String>" *
   "/<testword::String>") do req, res
 
   dictid = req.params[:dictid]
@@ -186,20 +170,30 @@ get(app,
 
   m = dictionaries[dictid].m
 
-  set1 = vectorSumOfWords(m, words2list(wordset1))
-  set2 = vectorSumOfWords(m, words2list(wordset2))
+  try
+    set1 = vectorSumOfWords(m, words2list(wordset1))
+    set2 = vectorSumOfWords(m, words2list(wordset2))
 
-  matrix = WordMatrix({"set1" => set1, "set2" => set2})
+    matrix = WordMatrix({"set1" => set1, "set2" => set2})
 
-  ranked = nearest(matrix, m[testword])
-  println("categorize: ", testword, " ", ranked[1][1], " : ", wordset1, " / ", wordset2)
-  # ranked[1][1]
-  jsonResponse(res, {
-    "testword" => testword,
-    "category" => ranked[1][1],
-    "set1" => wordset1,
-    "set2" => wordset2  
-  })
+    ranked = nearest(matrix, m[testword])
+
+    println("categorize: ", testword, " ", ranked[1], ",", ranked[2], " : ", wordset1, " / ", wordset2)
+
+    jsonResponse(res, {
+      "testword" => testword,
+      "category" => ranked[1][1],
+      "set1" => wordset1,
+      "set2" => wordset2
+    })
+  catch e
+    if isa(e, WordNotFound)
+      return jsonError(res, "'$(e.word)' not in '$(dictid)' dictionary")
+    else
+      # rethrow(e)
+      return jsonError(res, "unable to find vector sum of words: $(e)")
+    end
+  end
 end
 
 start(app, 8000)
