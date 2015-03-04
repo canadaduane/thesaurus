@@ -17,15 +17,19 @@ end
 
 function loadGzipFile(path::String)
     stream = GZip.gzopen(path)
-    relationships = Vector{Float64}[]
-    words = ASCIIString[]
+    relationships = Float64[]
+    words = String[]
+    rows = 0
+    cols = 0
     for line in eachline(stream)
         word, remainder = split(line, ' ', 2)
-        values = split(chop(remainder), ' ')
+        values = split(chomp(remainder), ' ')
+        rows = length(values)
         push!(words, word)
-        push!(relationships, map(float, values))
+        append!(relationships, map(float, values))
+        cols += 1
     end
-    return (relationships, words)
+    return (reshape(relationships, rows, cols), words)
 end
 
 function isIdxFilename(path::String)
