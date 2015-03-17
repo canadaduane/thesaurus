@@ -15,6 +15,12 @@ function isGzipFilename(path::String)
     return ismatch(r"\.gz$"i, path)
 end
 
+function getWordAndValuesFromLine(line)
+    word, remainder = split(chomp(line), ' ', 2)
+    values = split(remainder, ' ')
+    return (word, map(float, values))
+end
+
 function loadGzipFile(path::String)
     stream = GZip.gzopen(path)
     relationships = Float64[]
@@ -22,12 +28,17 @@ function loadGzipFile(path::String)
     rows = 0
     cols = 0
     for line in eachline(stream)
-        word, remainder = split(line, ' ', 2)
-        values = split(chomp(remainder), ' ')
-        rows = length(values)
-        push!(words, word)
-        append!(relationships, map(float, values))
-        cols += 1
+        try
+            word, values = getWordAndValuesFromLine(line)
+            if length(values) > rows
+                rows = length(values)
+            end
+            push!(words, word)
+            append!(relationships, values)
+            cols += 1
+        catch e
+            println("Unable to load line ", line)
+        end
     end
     return (reshape(relationships, rows, cols), words)
 end
