@@ -77,7 +77,7 @@ function WordMatrix(m :: WordMatrix, subset :: Array{String})
     relationships = reshape(vcat(subsetRels...), rows, cols)
     WordMatrix(relationships, subset)
 end
-WordMatrix(m :: WordMatrix, subset :: Array{ASCIIString}) = WordMatrix(m, convert(Array{String}, subset))
+WordMatrix(m :: WordMatrix, subset :: Array{String}) = WordMatrix(m, convert(Array{String}, subset))
 
 function WordMatrix(d :: Dict{Any, Any})
     relationships = Vector{Float64}[]
@@ -95,11 +95,11 @@ function indexOfWord(m :: WordMatrix, word :: String)
   findin(m.words, [word])[1]
 end
 
-function getindex(m :: WordMatrix, idx :: Integer)
+function Base.getindex(m :: WordMatrix, idx :: Integer)
     (m.words[idx], m.relationships[:,idx])
 end
 
-function getindex(m :: WordMatrix, word :: String)
+function Base.getindex(m :: WordMatrix, word :: String)
     try
         m.relationships[:,indexOfWord(m, word)]
     catch e
@@ -116,7 +116,7 @@ function compare(m :: WordMatrix, word :: String)
 end
 
 function nearest(m :: WordMatrix, wordOrVector)
-    sort([(x,y) for (x,y) in zip(m.words, compare(m, wordOrVector))], by = x -> x[2])
+    sort([(x,y) for (x,y) in zip(m.words, compare(m, wordOrVector))]) #, by = x -> x[2]
 end
 
 function topn(m :: WordMatrix, wordOrVector, n=30)
@@ -135,7 +135,7 @@ function topnPaginated(m :: WordMatrix, wordOrVector, page=1, perPage=30)
         numbers = range(startOfPage, endOfPage-startOfPage+1)
         zipped = zip(numbers, ranked[startOfPage:endOfPage])
         [
-            { "rank" => n, "word" => word, "distance" => dist}
+            [ "rank" => n, "word" => word, "distance" => dist]
             for (n, (word, dist)) in zipped
         ]
     else
@@ -152,12 +152,12 @@ function categorize(m :: WordMatrix, v)
      pairwise(Euclidean(), m.relationships, v)
 end
 
-function vectorSumOfWords(m :: WordMatrix, words :: Vector{ASCIIString})
+function vectorSumOfWords(m :: WordMatrix, words :: Vector{String})
     lookup = t -> m[t]
     mapreduce(lookup, +, words)
 end
 
-function vectorAvgOfWords(m :: WordMatrix, words :: Vector{ASCIIString})
+function vectorAvgOfWords(m :: WordMatrix, words :: Vector{String})
     lookup = t -> m[t]
     mapreduce(lookup, +, words) / length(words)
 end

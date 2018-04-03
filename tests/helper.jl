@@ -1,5 +1,5 @@
 using Base.Test
-using AnsiColor
+using Crayons.Box
 
 include("../WordMatrix.jl")
 
@@ -20,14 +20,14 @@ function failWithBacktrace(r::Test.Failure)
   io = IOBuffer()
   Base.show_backtrace(io, backtrace()[5:end])
   seekstart(io)
-  println("  " * red("fail") * " $(r.expr) $(indent(readall(io), 3))")
+  println("  ", RED_FG("fail"), " $(r.expr) $(indent(readall(io), 3))")
 end
 
 function printTestTotals()
   if failed == 0
-    println("success: $(green(string(successful))), failed: $(failed)")
+    println("success: $(GREEN_FG(string(successful))), failed: $(failed)")
   else
-    failedString = red("failed: $(failed)")
+    failedString = RED_FG("failed: $(failed)")
     println("success: $(successful), $(failedString)")
   end
 end
@@ -36,6 +36,6 @@ function fixture(path::String)
   joinpath(dirname(@__FILE__), "fixtures", path)
 end
 
-custom_handler(r::Test.Success) = (global successful; successful += 1; println("  " * green("ok") * " $(r.expr)"))
+custom_handler(r::Test.Success) = (global successful; successful += 1; println("  ", GREEN_FG("ok"), " $(r.expr)"))
 custom_handler(r::Test.Failure) = (global failed; failed += 1; failWithBacktrace(r))
 custom_handler(r::Test.Error)   = rethrow(r)

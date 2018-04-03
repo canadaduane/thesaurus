@@ -4,17 +4,17 @@ This is a Julia web app that uses the [GloVe](http://nlp.stanford.edu/projects/g
 
 # Installation
 
-- Download the CommonCrawl 300-dimension data set: [Common Crawl (840B tokens): 300d](http://www-nlp.stanford.edu/data/glove.840B.300d.txt.gz)
+- Download the CommonCrawl 300-dimension data set: [Common Crawl (840B tokens): 300d](http://nlp.stanford.edu/data/glove.840B.300d.zip)
 - [OPTIONAL] Separate it into a .vec and a .idx file (this allows us to use a fast readdlm julia call):
 
 ```bash
-wget http://www-nlp.stanford.edu/data/glove.840B.300d.txt.gz
+wget http://nlp.stanford.edu/data/glove.840B.300d.zip
 
-gunzip -c glove.840B.300d.txt.gz \
+unzip -c glove.840B.300d.zip \
 | awk '{for (i=2; i<NF; i++) printf $i " "; print $NF}' \
 | head -100000 >crawl300-100k.vec
 
-gunzip -c glove.840B.300d.txt.gz \
+unzip -c glove.840B.300d.zip \
 | awk '{print $1}' \
 | head -100000 >crawl300-100k.idx
 ```
@@ -49,7 +49,7 @@ $ julia
 ```julia
 julia> include("WordMatrix.jl")
 
-julia> m = WordMatrix("glove.840B.300d.txt.gz")
+julia> m = WordMatrix("crawl300-100k.idx")
 ```
 
 Note that if you'd like to load the idx/vec file, just reference the .idx file
